@@ -1,0 +1,13 @@
+Correct files to use as the golden set now:
+
+tagtable_unique_pairs.txt
+    -> tag value as the key and list of pids as values
+
+posttag.txt
+    -> (pid, tid) pairs that are unique ... that is
+        for every post, if there are duplicate tags,
+        the pid will only be recorded once as (pid, tid)
+        and not 2 representation of the same (pid, tid)
+
+tag.txt
+    -> (tid, value)

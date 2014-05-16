@@ -1,0 +1,48 @@
+from django.shortcuts import render
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from support_functions import json_get
+from django.core import serializers
+from post.models import Tag, Post, PostTag
+
+# Configurations for Query Processing
+athena_url = 'http://athena.ndnxr.com/query/processquery/'
+zeus_url = 'http://zeus.ndnxr.com/query/processquery/'
+
+garfield_url = 'http://garfield.ndnxr.com/query/processquery/'
+
+# Views
+
+def index(request):
+    context = {}
+    return render(request, '')
+
+@csrf_exempt
+def processquery(request):
+    posts = Post.objects.all()[:3]
+    posts = list(posts)
+    posts.insert(0, Post(text="0.888s"))
+    data = serializers.serialize("json", posts)
+    return HttpResponse(data, content_type="application/json")
+    return HttpResponse('Not implemented yet.')
+
+def getpost(request):
+    return HttpResponse('Not implemented yet.')
+
+# Proecess query request
+# Athena MySQL 
+@csrf_exempt
+def apq(request):
+    return json_get(request, athena_url)
+
+# Zeus MySQL
+@csrf_exempt
+def zpq(request):
+    return json_get(request, zeus_url)
+
+# Garfield and Odie Cassandra
+@csrf_exempt
+def gopq(request):
+    return json_get(request, garfield_url)
+
+

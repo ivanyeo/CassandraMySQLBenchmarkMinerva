@@ -1,0 +1,11 @@
+839646	if math\	frac-1}\
+otequiv #0 pmod/math, #then also math\	frac-1}\
+otequiv #0 pmod/math.
+839647	dilcher,skula /} furthermore if ''p'' is a wieferich #prime, then ''p''sup2/sup is a.
+839648	#furthermore the following was #shown: let ''p'' #be a #wieferich prime.
+839649	s0025-5718-98-00916-8/s0025-5718-98-00916-8.
+839650	crandall |first2=karl |last2=dilcher |first3=carl |last3=pomerance | title=a search for wieferich and wilson primes | journal=math.
+839651	s0025-5718-97-00791-6 |url=http://gauss.
+839652	knauer{{citation |author=joshua knauer; jörg richstein |title=the #continuing #search for wieferich primes |journal=math.
+839653	s0025-5718-05-01723-0/s0025-5718-05-01723-0.
+839654	near-#wieferich primes with ''a'' = #0 #represent #wieferich primes.

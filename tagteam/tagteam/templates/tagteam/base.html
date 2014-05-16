@@ -1,0 +1,288 @@
+{% load staticfiles %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="shortcut icon" href="images/ico/favicon.ico">
+
+    <title>Hash Tag Showdown!</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="{% static 'tagteam/css/bootstrap.min.css' %}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{% static 'tagteam/css/jumbotron.css' %}" rel="stylesheet">
+
+    <!-- Just for debugging purposes. Don't actually copy this line! -->
+    <!--[if lt IE 9]><script src="{% static 'tagteam/js/ie8-responsive-file-warning.js' %}"></script><![endif]-->
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="{% static 'tagteam/js/html5shiv.js' %}"></script>
+      <script src="{% static 'js/respond.min.js' %}"></script>
+    <![endif]-->
+
+    <!-- Override CSS -->
+    <style type="text/css">
+        .query-hide {
+            display: none;
+        }
+        .query-form {
+            padding-top: 18px;
+        }
+        #query-submit-button {
+            display: none;
+        }
+        #error-message {
+            display: none;
+        }
+    </style>
+
+    <!-- Load jQuery -->
+    <script src="{% static 'tagteam/js/jquery.min.js' %}"></script>
+    <script type="text/javascript">
+        var images = new Array();
+        
+        function preload() {
+            for (i=0; i<preload.arguments.length; i++) {
+                images[i] = new Image();
+                images[i].src = preload.arguments[i]
+            }
+        }
+
+        function display_loading() {
+                // Hide all output areas
+                $('#minerva-mysql-output').hide();
+                $('#minerva-cassandra-output').hide();
+                $('#az-mysql-output').hide();
+                $('#go-cassandra-output').hide();
+
+                // Hide all error message
+                $('#error-message').hide();
+
+                // Display loading gif
+                $('#minerva-mysql-loading-gif').show();
+                $('#minerva-cassandra-loading-gif').show();
+                $('#az-mysql-loading-gif').show();
+                $('#go-cassandra-loading-gif').show();
+        }
+
+        function display_results(item, value, time) {
+                // Hide loading gif
+                $('#' + item + '-loading-gif').hide();
+                
+                // Set text
+                $('#' + item + '-output').html(value);
+
+                // Slide down
+                $('#' + item + '-output').slideToggle(function(){
+                    // Display time
+                    var timeid = '#' + item + '-time';
+                    $(timeid).html(time);
+                    $(timeid).fadeToggle();
+                });
+        }
+
+        function hide_all_time() {
+            $.each(output_areas, function(key){
+                $('#' + output_areas[key] + '-time').hide();
+            });
+        }
+
+        var output_areas = [ 'minerva-mysql', 'minerva-cassandra', 'az-mysql', 'go-cassandra' ];
+        function invalid_query() {
+            // Hide all time
+            hide_all_time();
+
+            // Display invalid query
+            $.each(output_areas, function(key){
+                display_results(output_areas[key], 'Invalid query.');
+            });
+        }
+
+        function display_error_message(err_msg) {
+            $('#error-message').text(err_msg).fadeToggle();
+        }
+
+        $(function(){
+            // Preload images
+            preload("{% static 'tagteam/images/loading.gif' %}");
+            
+            // Hide all time
+            hide_all_time();
+
+            // Submit query handler
+            $('#query-form').submit(function(event){
+                // Prevent default form submission
+                event.preventDefault();
+
+                // Hide all time
+                hide_all_time();
+
+                // Display loading to user
+                display_loading();
+
+                // Get query results from server
+                $('#mysql-output').text("mysql id output place holder");
+
+                // Get text from server
+                var jqxhr = $.post("query/processquery/", 
+                        $('#query-form').serialize()).done(function(json_data){
+                            // Error check
+                            if (json_data === 'Invalid query.') {
+                                invalid_query();
+                                return;
+                            }
+
+                            var ul = $('<ul>');
+                            var time = 0;
+                            $.each(json_data, function(i, obj){
+                                // Get preamble data
+                                if (i == 0) {
+                                    // Get time
+                                    time = obj.fields.text + 's';
+                                    return;
+                                } else if (i == 1) {
+                                    // Get error message
+                                    err_msg = obj.fields.text;
+                    
+                                    if (err_msg !== '') {
+                                        display_error_message(err_msg);
+                                    }
+
+                                    return;
+                                }
+
+                                // Append everything else
+                                var li = $('<li>')
+                                li.append(obj.pk + ": " + obj.fields.text);
+                                ul.append(li); 
+                            });
+
+                            display_results('minerva-mysql', ul, time);
+                        });
+
+                // Display the results to the user this way
+                //setTimeout(function(){display_results('mysql', 'woohoo!'); }, 800);
+            });
+        });
+    </script>
+  </head>
+
+  <body>
+
+    <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="/">HashTag: Athena & Zeus</a>
+        </div>
+        <div class="navbar-collapse collapse">
+          <!--
+          <form class="navbar-form navbar-right" role="form">
+            <div class="form-group">
+              <input type="text" placeholder="Email" class="form-control">
+            </div>
+            <div class="form-group">
+              <input type="password" placeholder="Password" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-success">Sign in</button>
+          </form>
+          -->
+        </div><!--/.navbar-collapse -->
+      </div>
+    </div>
+
+    <!-- Search Query Area -->
+    <div class="container text-center query-form">
+      <form class="form-query" id="query-form" role="form" action="{% url 'query:processquery' %}" method="POST">
+        {% csrf_token %}
+        <!--<h2 class="form-signin-heading">Please sign in</h2>-->
+        <input type="query" name="query" class="form-control" placeholder="Boolean Query: #apple + #orange - #pear" required autofocus>
+        <button class="btn btn-lg btn-primary" id="query-submit-button" style="margin-top: 18px" type="submit">Search</button>
+      </form>
+      <div id="error-message" class="alert alert-danger" style="margin-top: 8px">Hello</div>
+    </div>
+
+    <!-- Main jumbotron for a primary marketing message or call to action -->
+    <!--
+    <div class="jumbotron">
+      <div class="container text-center">
+        <h1>Enter Hashtag Query Logic</h1>
+          <form class="form-query" id="query-form" role="form" action="{% url 'query:processquery' %}" method="POST">
+    -->
+            <!--<h2 class="form-signin-heading">Please sign in</h2>-->
+    <!--
+            <input type="query" name="query" class="form-control" placeholder="Boolean Query: #apple + #orange - #pear" required autofocus>
+            <button class="btn btn-lg btn-primary" style="margin-top: 18px" type="submit">Search</button>
+          </form>
+      </div>
+    </div>
+    -->
+
+    <div class="container">
+      <!-- Example row of columns -->
+      <div class="row">
+        <div class="col-md-6">
+          <h2>MySQL [Single] <span id="minerva-mysql-time"></span></h2>
+          <p id="minerva-mysql-loading-gif" class="text-center query-hide"><img src="{% static 'tagteam/images/loading.gif' %}"></p>
+          <p id="minerva-mysql-output">No query submitted. </p>
+          <!--
+          <p><a class="btn btn-default" href="#" role="button">View details &raquo;</a></p>
+          -->
+        </div>
+        <div class="col-md-6">
+          <h2>Cassandra [Single] <span id="minerva-cassandra-time"></span></h2>
+          <p id="minerva-cassandra-loading-gif" class="text-center query-hide"><img src="{% static 'tagteam/images/loading.gif' %}"></p>
+          <p id="minerva-cassandra-output">No query submitted. </p>
+          <!--
+          <p><a class="btn btn-default" href="#" role="button">View details &raquo;</a></p>
+          -->
+       </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <h2>MySQL [Distributed] <span id="az-mysql-time"></span></h2>
+          <p id="az-mysql-loading-gif" class="text-center query-hide"><img src="{% static 'tagteam/images/loading.gif' %}"></p>
+          <p id="az-mysql-output">No query submitted. </p>
+          <!--
+          <p><a class="btn btn-default" href="#" role="button">View details &raquo;</a></p>
+          -->
+        </div>
+        <div class="col-md-6">
+          <h2>Cassandra [Distributed] <span id="go-cassandra-time"></span></h2>
+          <p id="go-cassandra-loading-gif" class="text-center query-hide"><img src="{% static 'tagteam/images/loading.gif' %}"></p>
+          <p id="go-cassandra-output">No query submitted. </p>
+          <!--
+          <p><a class="btn btn-default" href="#" role="button">View details &raquo;</a></p>
+          -->
+       </div>
+      </div>
+
+
+      <hr>
+
+      <footer>
+        <p>&copy; Qirong Wang | Ivan Yeo</p>
+      </footer>
+    </div> <!-- /container -->
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="{% static 'tagteam/js/bootstrap.min.js' %}"></script>
+  </body>
+</html>
+
