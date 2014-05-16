@@ -1,6 +1,7 @@
 import re
 from post.models import Post, Tag, PostTag
-import sys
+import urllib
+from django.http import HttpResponse
 
 #Pre query processing to generate sets with tags to be added and tags to be removes
 def strip_query(query):
@@ -178,6 +179,22 @@ def getposts(addset, removeset, limit):
     # Return posts
     return post_results, ERR_MSG
 
-#**********************************
-# Getting Post from Cassandra db
+
+def json_get(request, dest_url):
+    if request.method == 'POST' and request.POST.dict().has_key('query'):
+        query = request.POST.get('query', '')
+
+        params = urllib.urlencode(dict(query=query))
+
+        f = urllib.urlopen(dest_url, params)
+        reply = '';
+
+        for line in f:
+            reply += line
+
+        f.close()
+
+    return HttpResponse(reply, content_type="application/json")
+
+
 
