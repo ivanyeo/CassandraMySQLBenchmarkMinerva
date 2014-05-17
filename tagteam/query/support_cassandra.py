@@ -26,7 +26,7 @@ def getposts_ca(addset, removeset, limit):
     cluster = Cluster(['localhost'])
 #    session = cluster.connect('hash_space')    
  #FIXME using test keyspace 
-    session = cluster.connect('test_space')
+    session = cluster.connect('hash_space')
     # Local Variables
     offset = 0
     pids = set()
@@ -73,6 +73,9 @@ def getposts_ca(addset, removeset, limit):
     if removeset:
         remove_regex = "|".join(removeset)
         pattern = re.compile('#({0})'.format(remove_regex))
+    
+    # Initialize tail_pids list, store offset pid value for each add tag
+    tail_pids = [None]*len(addset)
 
     # Iterate to get posts
     while len(post_results) < limit and not empty_results:
@@ -91,13 +94,22 @@ def getposts_ca(addset, removeset, limit):
             pids = set()
 
             # Get limit number of posts for each tags
+            tag_cnt = 0 #tag_cnt is the iterator of addset tag, used to index tail_pids
             for tag in addset:
                 # Get list of pids with tag in addset, trim with offset` 
-                # FIXME cassandra limit with offset is unknown
-                pid=session.execute("select postid from post_tag where tagtext=\'"+tag+"\' order by postid desc limit "+str(limit))
-                pid=[p.postid for p in pid]
-                pid=pid[offset:offset+limit]
+                # if offset not zero, start searching from last pid to save memory
+                if offset!=0:
+                    pid=session.execute("select postid from post_tag where tagtext=\'"+tag+"\' and postid<"+str(tail_pids[tag_cnt])+" order by postid desc limit "+str(limit))
+                # When offset is zero, start searching from the largest value
+                else:
+                    pid=session.execute("select postid from post_tag where tagtext=\'"+tag+"\' order by postid desc limit "+str(limit))
 
+                pid=[p.postid for p in pid]
+                # Record tail pid value for next search round
+                if pid:
+                     tail_pids[tag_cnt] = pid[-1]
+                
+                tag_cnt += 1
                 # Union add the new found pids
                 pids = pids.union(set(pid))
 
