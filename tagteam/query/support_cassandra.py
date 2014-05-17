@@ -1,6 +1,7 @@
 import re
 from cassandra.cluster import Cluster
 from post.models import Post, Tag, PostTag
+import time
 
 # Get Post from Cassandra db
 # input: addset(#ivan) and removeset(#monica) for query: #ivan-#monica
@@ -33,19 +34,31 @@ def getposts_ca(addset, removeset, limit):
     ERR_MSG = ''
     invalid_tags = []
     posts = [] # Return Post objects as the results
+
+    # Initialize time counters
+    start = end = 0
+    time_diff = total_time = 0
     
     # Error check: Empty Query: nothing in addset and removeset
     if not addset and not removeset:
-        return [], "Nothing in addset or removeset."
+        # Shutdown cluster
+        cluster.shutdown()
+
+        return [], "Nothing in addset or removeset.", total_time
 
     # Sanitize: Remove all invalid tags in addset and append to error message
     for tag in set(addset):
         try:
             # Get tag count
+            start = time.time()
             result = session.execute("SELECT count(*) from post_tag where tagtext=\'"+tag+"\' limit 10")
+            end = time.time()
+            total_time += (end - start)
+
             count = result[0].count
+
             # if count==0, invalid tag query:    
-            if count==0:
+            if count == 0:
                 invalid_tags.append(tag)
                 addset.remove(tag)
         # if retrival of tag fails: invalid query
@@ -60,7 +73,10 @@ def getposts_ca(addset, removeset, limit):
     # Case 0: #qirong - #school (Nothing in addset that is left, hence nothing to remove as well)
     # return: empty list with error message as well
     if not addset and invalid_tags:
-        return [], ERR_MSG
+        # Shutdown cluster
+        cluster.shutdown()
+
+        return [], ERR_MSG, total_time
     
     # ***
     # Accumulated post post_result[]
@@ -98,11 +114,14 @@ def getposts_ca(addset, removeset, limit):
             for tag in addset:
                 # Get list of pids with tag in addset, trim with offset` 
                 # if offset not zero, start searching from last pid to save memory
+                start = time.time()
                 if offset!=0:
                     pid=session.execute("select postid from post_tag where tagtext=\'"+tag+"\' and postid<"+str(tail_pids[tag_cnt])+" order by postid desc limit "+str(limit))
                 # When offset is zero, start searching from the largest value
                 else:
                     pid=session.execute("select postid from post_tag where tagtext=\'"+tag+"\' order by postid desc limit "+str(limit))
+                end = time.time()
+                total_time += (end - start)
 
                 pid=[p.postid for p in pid]
                 # Record tail pid value for next search round
@@ -138,6 +157,9 @@ def getposts_ca(addset, removeset, limit):
     # Get limit number of posts
     post_results = post_results[:limit]
 
+    # Shutdown cluster
+    cluster.shutdown()
+
     # Return posts
-    return post_results, ERR_MSG
+    return post_results, ERR_MSG, total_time
 
