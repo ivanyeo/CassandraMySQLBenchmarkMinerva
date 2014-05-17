@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from django.core import serializers
 from post.models import Post, Tag, PostTag
 from django.shortcuts import get_object_or_404
-from query.support_functions import strip_query, getposts
+from query.support_functions import strip_query, getposts, json_get
 from django.views.decorators.csrf import csrf_exempt
 import string
 import urllib
