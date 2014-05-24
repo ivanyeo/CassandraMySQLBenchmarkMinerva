@@ -181,4 +181,32 @@ def processquerydist(request):
     data = serializers.serialize("json", post_results)
     return HttpResponse(data, content_type="application/json")
 
+@csrf_exempt
+def processquerycadist(request):
+    
+    # Get query result from garfield server
+    gojson = gopq(request).content
+        
+    # Re-create Post objects ... to get the time 
+    posts = []
+    for p in serializers.deserialize("json", gojson):
+        posts.append(p.object)
 
+    # Get time that is reported from Gafrield & Odie
+    time_diff = posts.pop(0).text
+
+    # Get posts from Minerva SQL for the text
+    mjson = processquery(request).content
+
+    # Re-create Post objects ... to get the time 
+    posts = []
+    for p in serializers.deserialize("json", mjson):
+        posts.append(p.object)
+
+    # Substitute with the right time
+    p = posts.pop(0)
+    posts.insert(0, Post(text=time_diff))
+
+    # Return JSON response of query logic
+    data = serializers.serialize("json", posts)
+    return HttpResponse(data, content_type="application/json")
