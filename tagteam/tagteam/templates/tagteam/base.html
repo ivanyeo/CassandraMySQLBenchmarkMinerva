@@ -40,6 +40,9 @@
         }
         #error-message {
             display: none;
+        }   
+        #minerva-mysql-time, #minerva-cassandra-time, #az-mysql-time, #go-cassandra-time {
+            display: block;
         }
     </style>
 
@@ -109,6 +112,48 @@
             $('#error-message').text(err_msg).fadeToggle();
         }
 
+        // Master url to detect error
+        master_url = 'query/processquery/';
+        function json_query(dest_url, result_area) {
+            var jqxhr = $.post(dest_url, 
+                    $('#query-form').serialize()).done(function(json_data){
+                        // Error check
+                        if (json_data === 'Invalid query.') {
+                            invalid_query();
+                            return;
+                        }
+
+                        var ul = $('<ul>');
+                        var time = 0;
+                        $.each(json_data, function(i, obj){
+                            // Get preamble data
+                            if (i == 0) {
+                                // Get time
+                                time = obj.fields.text + 's';
+                                return;
+                            } else if (i == 1 ) {
+                                if ( dest_url === master_url) { 
+                                    // Get error message
+                                    err_msg = obj.fields.text;
+                    
+                                    if (err_msg !== '') {
+                                        display_error_message(err_msg);
+                                    }
+                                }
+
+                                return;
+                            }
+
+                            // Append everything else
+                            var li = $('<li>')
+                            li.append(obj.pk + ": " + obj.fields.text);
+                            ul.append(li); 
+                        });
+
+                        display_results(result_area, ul, time);
+                    });
+        }
+
         $(function(){
             // Preload images
             preload("{% static 'tagteam/images/loading.gif' %}");
@@ -131,41 +176,17 @@
                 $('#mysql-output').text("mysql id output place holder");
 
                 // Get text from server
-                var jqxhr = $.post("query/processquery/", 
-                        $('#query-form').serialize()).done(function(json_data){
-                            // Error check
-                            if (json_data === 'Invalid query.') {
-                                invalid_query();
-                                return;
-                            }
+                // 1) Minerva MySQL
+                json_query("query/processquery/", "minerva-mysql");
 
-                            var ul = $('<ul>');
-                            var time = 0;
-                            $.each(json_data, function(i, obj){
-                                // Get preamble data
-                                if (i == 0) {
-                                    // Get time
-                                    time = obj.fields.text + 's';
-                                    return;
-                                } else if (i == 1) {
-                                    // Get error message
-                                    err_msg = obj.fields.text;
-                    
-                                    if (err_msg !== '') {
-                                        display_error_message(err_msg);
-                                    }
+                // 2) Athena & Zeus MySQL (Distributed)
+                json_query("query/processquerydist/", "az-mysql");
 
-                                    return;
-                                }
+                // 3) Cassandra - Minerva
+                json_query("query/processqueryca/", "minerva-cassandra");
 
-                                // Append everything else
-                                var li = $('<li>')
-                                li.append(obj.pk + ": " + obj.fields.text);
-                                ul.append(li); 
-                            });
-
-                            display_results('minerva-mysql', ul, time);
-                        });
+                // 4) Cassandra - Garfield & Odie
+                json_query("query/processquerycadist/", "go-cassandra");
 
                 // Display the results to the user this way
                 //setTimeout(function(){display_results('mysql', 'woohoo!'); }, 800);
