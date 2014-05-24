@@ -5,6 +5,9 @@ from query import views
 urlpatterns = patterns('',
     url(r'^$', views.index, name='index'),
     url(r'^processquery/$',views.processquery, name='processquery'),
+    url(r'^processqueryca/$',views.processqueryca, name='processqueryca'),
+    url(r'^processquerydist/$',views.processquerydist, name='processquerydist'),
+    url(r'^processquerycadist/$',views.processquerycadist, name='processquerycadist'),
     url(r'^getpost/(?P<post_id>\d+)/?$',views.getpost, name='getpost'),
 
     # MySQL: Athena and Zeus process query
